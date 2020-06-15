@@ -39,20 +39,29 @@ public class CommonController {
 			" user_id=:user_id , passwd=:passwd , schema_name=:schema_name , db_type = :db_type where name = :name ";
 	@RequestMapping(value="/cds/ds_upsert",  method= {RequestMethod.GET , RequestMethod.POST} )
 	public String dataSourceUpsert(HttpServletRequest request) throws UnsupportedEncodingException {
-		Map<String, String[]> parameters = request.getParameterMap();
-		Map paramMap = CdsUtil.requserMap2Map(parameters);
-		//logger.debug(request.getQueryString());
-		//Map paramMap = CdsUtil.splitQuery(request.getQueryString());
-		logger.debug(paramMap.toString());
-		List lt = commdao.list(dsSelect, paramMap);
-		int count =0;
-		if (lt.size() > 0) {
-			count = commdao.update(dsUpdate, paramMap);
+		if(tokenValidator(request)) {
+			Map<String, String[]> parameters = request.getParameterMap();
+			Map paramMap = CdsUtil.requserMap2Map(parameters);
+			//logger.debug(request.getQueryString());
+			//Map paramMap = CdsUtil.splitQuery(request.getQueryString());
+			logger.debug(paramMap.toString());
+			List lt = commdao.list(dsSelect, paramMap);
+			int count =0;
+			if (lt.size() > 0) {
+				count = commdao.update(dsUpdate, paramMap);
+			} else {
+				count = commdao.update(dsInsert, paramMap);
+			}
+			return "Data source update row " + count;
 		} else {
-			count = commdao.update(dsInsert, paramMap);
-		}
+			// token error
+			Map result_error = new ConcurrentHashMap();
+			result_error.put("Error", "UNAUTHORIZED");
+			List<Map> result = new ArrayList<>();
+			result.add(result_error);
 
-		return "Data source update row " + count;
+			return result.toString();
+		}
 	}
 
 	final String sqlSelect = "SELECT api_url FROM data_service  WHERE api_url = :api_url";
@@ -65,19 +74,29 @@ public class CommonController {
 
 	@RequestMapping(value="/cds/sql_upsert",  method= {RequestMethod.GET , RequestMethod.POST} )
 	public String sqlUpsert(HttpServletRequest request) {
-		Map<String, String[]> parameters = request.getParameterMap();
+		if(tokenValidator(request)) {
+			Map<String, String[]> parameters = request.getParameterMap();
 
 
-		Map paramMap = CdsUtil.requserMap2Map(parameters);
-		logger.debug(paramMap.toString());
-		List lt = commdao.list(sqlSelect, paramMap);
-		int count =0;
-		if (lt.size() > 0) {
-			count = commdao.update(sqlUpdate, paramMap);
+			Map paramMap = CdsUtil.requserMap2Map(parameters);
+			logger.debug(paramMap.toString());
+			List lt = commdao.list(sqlSelect, paramMap);
+			int count =0;
+			if (lt.size() > 0) {
+				count = commdao.update(sqlUpdate, paramMap);
+			} else {
+				count = commdao.update(sqlInsert, paramMap);
+			}
+			return "Data service update row " + count;
 		} else {
-			count = commdao.update(sqlInsert, paramMap);
+			// token error
+			Map result_error = new ConcurrentHashMap();
+			result_error.put("Error", "UNAUTHORIZED");
+			List<Map> result = new ArrayList<>();
+			result.add(result_error);
+
+			return result.toString();
 		}
-		return "Data service update row " + count;
 	}
 
 	@RequestMapping(value="/api/**",  method= {RequestMethod.GET , RequestMethod.POST} )
@@ -167,6 +186,41 @@ public class CommonController {
 	public String dsHealthCheck(@PathVariable String dsName) {
 		boolean result = commdao.getDSStatus(dsName);
 		return "Data Source Health Check :" +dsName + " is working " + result;
+	}
+
+	@RequestMapping(value="/cds/dsCheck", method= {RequestMethod.POST})
+	public List<Map> dsCheck(HttpServletRequest request) {
+		if (tokenValidator(request)) {
+			Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
+
+			List returnlist = commdao.list("select  * from data_source WHERE name = :name", paramMap);
+			return returnlist;
+		} else {
+			Map result_error = new ConcurrentHashMap();
+			result_error.put("Error", "UNAUTHORIZED");
+			List<Map> result = new ArrayList<>();
+			result.add(result_error);
+
+			return result;
+		}
+	}
+
+	@RequestMapping(value="/cds/sqlCheck", method= {RequestMethod.POST})
+	public List<Map> sqlCheck(HttpServletRequest request) {
+		if (tokenValidator(request)) {
+			Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
+
+			List returnlist = commdao.list("select  * from data_service WHERE api_url = :api_url", paramMap);
+			return returnlist;
+		} else {
+			Map result_error = new ConcurrentHashMap();
+			result_error.put("Error", "UNAUTHORIZED");
+			List<Map> result = new ArrayList<>();
+			result.add(result_error);
+
+			return result;
+		}
+
 	}
 
 	private boolean tokenValidator(HttpServletRequest request) {
