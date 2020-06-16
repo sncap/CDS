@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.cds</groupId>
 	<artifactId>cds</artifactId>
-	<version>0.0.2</version>
+	<version>0.0.3</version>
 	<name>cds</name>
 	<description>CDS for Spring Boot</description>
 
@@ -99,7 +99,7 @@
 				<configuration>
 					<mainClass>com.cds.CdsApplication</mainClass>
 				</configuration>
-				
+
 			</plugin>
 		</plugins>
 	</build>
