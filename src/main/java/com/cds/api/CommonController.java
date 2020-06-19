@@ -8,11 +8,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.crypto.Data;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -105,17 +107,28 @@ public class CommonController {
 		if (tokenValidator(request)) {
 			// TODO ACL Function Add
 
-			// ~ TODO
-			String api_url = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-			api_url = api_url.substring(1);
-			logger.debug(request.getQueryString());
+			try{
+				// ~ TODO
+				String api_url = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+				api_url = api_url.substring(1);
+				logger.debug(request.getQueryString());
 
-			//Map paramMap = CdsUtil.splitQuery(request.getQueryString());
-			Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
-			logger.debug(paramMap.toString());
-			List returnList = commdao.exec(api_url, paramMap);
-			//
-			return returnList;
+				//Map paramMap = CdsUtil.splitQuery(request.getQueryString());
+				Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
+				logger.debug(paramMap.toString());
+				List returnList = commdao.exec(api_url, paramMap);
+				//
+				return returnList;
+			} catch (Exception e) {
+				logger.error("API Rest Error", e);
+				Map result_error = new ConcurrentHashMap();
+				result_error.put("Error", e.getMessage());
+				result_error.put("Cause", e.getCause());
+				List<Map> result = new ArrayList<>();
+				result.add(result_error);
+
+				return result;
+			}
 		} else {
 			// token error
 			Map result_error = new ConcurrentHashMap();
@@ -146,17 +159,24 @@ public class CommonController {
 
 	@RequestMapping(value="/cds/sql_test",  method= {RequestMethod.GET , RequestMethod.POST} )
 	public List<Map> sqlTest(HttpServletRequest request) {
+		Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
+
+		String dsName = (String) paramMap.get("dsname");
+		paramMap.remove("dsname");
+		String sql = (String) paramMap.get("sql");
+		paramMap.remove("sql");
+		List returnlist = commdao.execTestSql(dsName, sql, paramMap);
+		return returnlist;
+	}
+
+	@RequestMapping(value="/cds/listallds",  method= {RequestMethod.GET , RequestMethod.POST} )
+	public List<Map> listallds(HttpServletRequest request) {
 		if (tokenValidator(request)) {
 			Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
 
-			String dsName = (String) paramMap.get("dsname");
-			paramMap.remove("dsname");
-			String sql = (String) paramMap.get("sql");
-			paramMap.remove("sql");
-			List returnlist = commdao.execTestSql(dsName, sql, paramMap);
+			List returnlist = commdao.list("select  * from data_source" , paramMap);
 			return returnlist;
 		} else {
-			// token error
 			Map result_error = new ConcurrentHashMap();
 			result_error.put("Error", "UNAUTHORIZED");
 			List<Map> result = new ArrayList<>();
@@ -166,27 +186,31 @@ public class CommonController {
 		}
 	}
 
-	@RequestMapping(value="/cds/listallds",  method= {RequestMethod.GET , RequestMethod.POST} )
-	public List<Map> listallds(HttpServletRequest request) {
-		Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
-
-		List returnlist = commdao.list("select  * from data_source" , paramMap);
-		return returnlist;
-	}
-
 
 	@RequestMapping(value="/cds/listallsql",  method= {RequestMethod.GET , RequestMethod.POST} )
 	public List<Map> listallsql(HttpServletRequest request) {
-		Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
+		if (tokenValidator(request)) {
+			Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
 
-		List returnlist = commdao.list("select  * from data_service" , paramMap);
-		return returnlist;
+			List returnlist = commdao.list("select  * from data_service" , paramMap);
+			return returnlist;
+		} else {
+			Map result_error = new ConcurrentHashMap();
+			result_error.put("Error", "UNAUTHORIZED");
+			List<Map> result = new ArrayList<>();
+			result.add(result_error);
+
+			return result;
+		}
 	}
 
 	@RequestMapping(value="/cds/dsStatus/{dsName}",  method= {RequestMethod.GET} )
 	public String dsHealthCheck(@PathVariable String dsName) {
 		boolean result = commdao.getDSStatus(dsName);
-		return "Data Source Health Check :" +dsName + " is working " + result;
+		if(result) {
+			return "[ " + dsName + " ] Data Source Health is Working";
+		}
+		throw new IllegalStateException("Data Source Error : " + dsName);
 	}
 
 	@RequestMapping(value="/cds/dsCheck", method= {RequestMethod.POST})
