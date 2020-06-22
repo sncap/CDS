@@ -15,11 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.HandlerMapping;
 
 
@@ -210,7 +206,8 @@ public class CommonController {
 		if(result) {
 			return "[ " + dsName + " ] Data Source Health is Working";
 		}
-		throw new IllegalStateException("Data Source Error : " + dsName);
+//		throw new IllegalStateException("Data Source Error : " + dsName);
+		throw new SecurityException("Date Source [ "+ dsName + " ]  is invalid");
 	}
 
 	@RequestMapping(value="/cds/dsCheck", method= {RequestMethod.POST})
@@ -246,6 +243,18 @@ public class CommonController {
 			return result;
 		}
 
+	}
+
+	@ControllerAdvice
+	public class SecurityControllerAdvice {
+
+		@ExceptionHandler(SecurityException.class)
+		@ResponseBody
+		@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+		public SecurityResponse handleSecurityException(SecurityException se) {
+			SecurityResponse response = new SecurityResponse(se.getMessage());
+			return response;
+		}
 	}
 
 	private boolean tokenValidator(HttpServletRequest request) {

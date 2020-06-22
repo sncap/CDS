@@ -50,17 +50,17 @@ public class CommonDao {
 	int exexResult_max_cnt =10;
 	public List execTestSql(String dsName, String sql, Map param) {
 		Sql2o engine = (Sql2o) ds_info.get(dsName);
+		if (engine == null) {
+			List alist = new ArrayList();
+			alist.add(Collections.singletonMap("error", "No DataSource check " + dsName));
+			return alist;
+		}
 		Map ds_meta_map = (Map) ds_meta_info.get(dsName);
 		int conn_max_cnt = (int) ds_meta_map.get("conn_max_cnt");
 		int conn_timeout = (int) ds_meta_map.get("conn_timeout");
 		String db_type = (String) ds_meta_map.get("db_type");
 		db_type = db_type.toLowerCase();
 
-		if (engine == null) {
-			List alist = new ArrayList();
-			alist.add(Collections.singletonMap("error", "No DataSource check " + dsName));
-			return alist;
-		}
 		try (Connection con = engine.open()) {
 			con.getJdbcConnection().setNetworkTimeout(Executors.newSingleThreadExecutor(), execTestSqlmilliseconds);
 
@@ -249,47 +249,29 @@ public class CommonDao {
 	}
 
 	public boolean getDSStatus(String dsName) {
-		try {
-		Map item = getDS(dsName);
-
-		String new_db_url = (String) item.get("db_url");
-		int conn_max_cnt = Integer.parseInt(item.get("conn_max_cnt").toString());
-		int conn_timeout = Integer.parseInt(item.get("conn_timeout").toString());
-		String user_id = (String) item.get("user_id");
-		String passwd = (String) item.get("passwd");
-		passwd = DbPassword.decAES(passwd) ;
-		String schemaName = (String) item.get("schema_name");
-		String db_type = (String) item.get("db_type");
-
-		String sql = "select 1";
-
-		HikariDataSource dataSource = new HikariDataSource();
-//		dataSource.setConnectionTimeout(conn_timeout * 1000);
-		dataSource.setValidationTimeout(conn_timeout * 1000);
-		dataSource.setMaximumPoolSize(conn_max_cnt);
-		dataSource.setJdbcUrl(new_db_url);
-		if (user_id != null && !"".equals(user_id)) {
-			dataSource.setUsername(user_id);
+		Sql2o engine = (Sql2o) ds_info.get(dsName);
+		if (engine == null) {
+			return false;
 		}
-		if (passwd != null && !"".equals(passwd)) {
-			dataSource.setPassword(passwd);
-		}
-		if (schemaName != null && !"".equals(schemaName)) {
-			dataSource.setSchema(schemaName);
-		}
+		Map ds_meta_map = (Map) ds_meta_info.get(dsName);
+		int conn_max_cnt = (int) ds_meta_map.get("conn_max_cnt");
+		int conn_timeout = (int) ds_meta_map.get("conn_timeout");
+		String db_type = (String) ds_meta_map.get("db_type");
+		db_type = db_type.toLowerCase();
 
-		Sql2o engine = new Sql2o(dataSource);
-		Connection con = engine.open();
-//		try (Connection con = engine.open()) {
+		try (Connection con = engine.open()) {
+			con.getJdbcConnection().setNetworkTimeout(Executors.newSingleThreadExecutor(), execTestSqlmilliseconds);
+			String sql = "select 1";
+
 			Query query = con.createQuery(sql);
 
 			List lt = query.executeAndFetchTable().asList();
 			if(((Map)lt.get(0)).size() > 0)
 				return true;
+
 		} catch(Exception e) {
 			logger.error("Datasource is not working .." , e);
 		}
-
 		return false;
 	}
 
