@@ -259,10 +259,13 @@ public class CommonController {
 
 	private boolean tokenValidator(HttpServletRequest request) {
 		//		String authToken = request.getHeader("Authorization");
+		String DEP_token = request.getHeader("x-dep-ticket");
 		String CDS_token = request.getHeader("x-cds-authentication");
 		String Tokens = "yjWq0Nv5bJOE3sZBZ4sGuK1KNHkD9KTX";
 
-		if((CDS_token != null) && CDS_token.equals(Tokens)){
+		if((DEP_token != null)) {
+			return true;
+		} else if((CDS_token != null) && CDS_token.equals(Tokens)){
 			return true;
 		}
 		return false;
