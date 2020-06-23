@@ -1,8 +1,15 @@
 package com.cds.api;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,9 +20,15 @@ import javax.xml.crypto.Data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.HandlerMapping;
 
 
@@ -53,12 +66,13 @@ public class CommonController {
 			return "Data source update row " + count;
 		} else {
 			// token error
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result.toString();
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result.toString();
 		}
 	}
 
@@ -88,12 +102,13 @@ public class CommonController {
 			return "Data service update row " + count;
 		} else {
 			// token error
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result.toString();
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result.toString();
 		}
 	}
 
@@ -116,23 +131,25 @@ public class CommonController {
 				//
 				return returnList;
 			} catch (Exception e) {
-				logger.error("API Rest Error", e);
-				Map result_error = new ConcurrentHashMap();
-				result_error.put("Error", e.getMessage());
-				result_error.put("Cause", e.getCause());
-				List<Map> result = new ArrayList<>();
-				result.add(result_error);
-
-				return result;
+				throw new SecurityException(HttpStatus.INTERNAL_SERVER_ERROR,"API Parameter is invalid");
+//				logger.error("API Rest Error", e);
+//				Map result_error = new ConcurrentHashMap();
+//				result_error.put("Error", e.getMessage());
+//				result_error.put("Cause", e.getCause());
+//				List<Map> result = new ArrayList<>();
+//				result.add(result_error);
+//
+//				return result;
 			}
 		} else {
 			// token error
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result;
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result;
 		}
 	}
 
@@ -144,12 +161,13 @@ public class CommonController {
 			return "reload ok conn_max_cnt =" + connMaxCnt;
 		} else {
 			// token error
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result.toString();
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result.toString();
 		}
 	}
 
@@ -173,12 +191,13 @@ public class CommonController {
 			List returnlist = commdao.list("select  * from data_source" , paramMap);
 			return returnlist;
 		} else {
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result;
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result;
 		}
 	}
 
@@ -191,12 +210,13 @@ public class CommonController {
 			List returnlist = commdao.list("select  * from data_service" , paramMap);
 			return returnlist;
 		} else {
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result;
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result;
 		}
 	}
 
@@ -207,7 +227,7 @@ public class CommonController {
 			return "[ " + dsName + " ] Data Source Health is Working";
 		}
 //		throw new IllegalStateException("Data Source Error : " + dsName);
-		throw new SecurityException("Date Source [ "+ dsName + " ]  is invalid");
+		throw new SecurityException(HttpStatus.INTERNAL_SERVER_ERROR,"Date Source [ "+ dsName + " ]  is invalid");
 	}
 
 	@RequestMapping(value="/cds/dsCheck", method= {RequestMethod.POST})
@@ -218,12 +238,13 @@ public class CommonController {
 			List returnlist = commdao.list("select  * from data_source WHERE name = :name", paramMap);
 			return returnlist;
 		} else {
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result;
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result;
 		}
 	}
 
@@ -235,12 +256,13 @@ public class CommonController {
 			List returnlist = commdao.list("select  * from data_service WHERE api_url = :api_url", paramMap);
 			return returnlist;
 		} else {
-			Map result_error = new ConcurrentHashMap();
-			result_error.put("Error", "UNAUTHORIZED");
-			List<Map> result = new ArrayList<>();
-			result.add(result_error);
-
-			return result;
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+//			Map result_error = new ConcurrentHashMap();
+//			result_error.put("Error", "UNAUTHORIZED");
+//			List<Map> result = new ArrayList<>();
+//			result.add(result_error);
+//
+//			return result;
 		}
 
 	}
@@ -250,10 +272,16 @@ public class CommonController {
 
 		@ExceptionHandler(SecurityException.class)
 		@ResponseBody
-		@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-		public SecurityResponse handleSecurityException(SecurityException se) {
-			SecurityResponse response = new SecurityResponse(se.getMessage());
-			return response;
+//		@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//		public SecurityResponse handleSecurityException(SecurityException se) {
+//			SecurityResponse response = new SecurityResponse(se.getStatus(), se.getMessage());
+//			return response;
+//		}
+		public ResponseEntity<Object> handleSecurityException(SecurityException se, WebRequest request) {
+			Map<String, Object> response = new HashMap<>();
+
+			response.put("message", se.getMessage());
+			return new ResponseEntity<>(response, se.getStatus());
 		}
 	}
 
@@ -270,5 +298,50 @@ public class CommonController {
 		}
 		return false;
 	}
+
+	@GetMapping("/downloadFile/{fileName:.+}")
+	public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request){
+		// Load file as Resource
+		Resource resource = null;
+		Path filePath = Paths.get("/data/log/cds",fileName);
+		String path = request.getHeader("file-path");
+
+		if(path!=null) {
+			filePath = Paths.get(path,fileName);
+		}
+
+		System.out.println("Begin to Download file...");
+
+		try {
+			resource = new UrlResource(filePath.toUri());
+
+			if(!resource.exists()) {
+				throw new SecurityException(HttpStatus.INTERNAL_SERVER_ERROR, filePath + " 파일을 찾을 수 없습니다.");
+			}
+		}catch(MalformedURLException e) {
+			throw new SecurityException(HttpStatus.INTERNAL_SERVER_ERROR, filePath + " 파일을 찾을 수 없습니다.");
+		}
+
+		System.out.println("Download file is : " +resource.toString());
+
+		// Try to determine file's content type
+		String contentType = null;
+		try {
+			contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+		} catch (IOException ex) {
+			logger.info("Could not determine file type.");
+		}
+
+		// Fallback to the default content type if type could not be determined
+		if(contentType == null) {
+			contentType = "application/octet-stream";
+		}
+
+		return ResponseEntity.ok()
+				.contentType(MediaType.parseMediaType(contentType))
+				.header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+				.body(resource);
+	}
+
 
 }
