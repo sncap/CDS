@@ -8,6 +8,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -343,5 +344,46 @@ public class CommonController {
 				.body(resource);
 	}
 
+
+	@RequestMapping(value="/api2Csv/**",  method= {RequestMethod.GET , RequestMethod.POST} )
+	@ResponseStatus(value = HttpStatus.OK)
+	public List<Map> callApi2Csv(HttpServletRequest request) throws UnsupportedEncodingException, SQLException   {
+		if (tokenValidator(request)) {
+			// TODO ACL Function Add
+			try{
+				// ~ TODO
+				String api_url = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+				api_url = api_url.substring(1);
+				logger.debug(request.getQueryString());
+
+				//Map paramMap = CdsUtil.splitQuery(request.getQueryString());
+				Map paramMap = CdsUtil.requserMap2Map(request.getParameterMap());
+				logger.debug(paramMap.toString());
+				api_url = api_url.replace("api2Csv","api");
+				List returnList = commdao.exec(api_url, paramMap);
+				//
+
+				String delimiter = request.getHeader("delimiter");
+				if(delimiter == null) {
+					delimiter = ",";
+				}
+
+				CsvWriter csv = new CsvWriter();
+				String fileName = api_url.replace("/",".")+"-"+(System.currentTimeMillis());
+				csv.convert2CSV(returnList, fileName, delimiter);
+				Map result_msg = new ConcurrentHashMap();
+				result_msg.put("filename", fileName);
+				result_msg.put("result", "saved file");
+				List<Map> result = new ArrayList<>();
+				result.add(result_msg);
+				return result;
+			} catch (Exception e) {
+				throw new SecurityException(HttpStatus.INTERNAL_SERVER_ERROR,"API Parameter is invalid");
+			}
+		} else {
+			// token error
+			throw new SecurityException(HttpStatus.UNAUTHORIZED,"Token Key is invalid");
+		}
+	}
 
 }
