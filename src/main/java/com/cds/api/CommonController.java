@@ -386,4 +386,12 @@ public class CommonController {
 		}
 	}
 
+	// post parameter test
+	@RequestMapping(value="/posttest",  method= {RequestMethod.POST} )
+	@ResponseStatus(value = HttpStatus.OK)
+	public HttpStatus postTest(HttpServletRequest request, @RequestParam("a") String a, @RequestParam("b") String b)    {
+		System.out.println("a : " + a);
+		System.out.println("b : " + b);
+		return HttpStatus.OK;
+	}
 }
